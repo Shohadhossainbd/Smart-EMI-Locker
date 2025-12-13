@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const { google } = require('googleapis');
 const bodyParser = require('body-parser');
@@ -12,12 +11,9 @@ const PORT = process.env.PORT || 3000;
 const app = express();
 app.use(bodyParser.json());
 
-// Serve frontend HTML, CSS, JS
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Root route serve HTML
+// Serve the HTML from root (no public folder)
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Google Auth
