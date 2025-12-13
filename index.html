@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <title>EMI Locker Admin</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f0f0f0; }
+    input, button { padding: 10px; margin: 5px 0; width: 100%; }
+    button { cursor: pointer; background: #007bff; color: white; border: none; }
+    button:hover { background: #0056b3; }
+    .result { margin-top: 15px; padding: 10px; background: #fff; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <h2>EMI Locker Admin</h2>
+
+  <h3>Create Enterprise</h3>
+  <input type="text" id="projectId" placeholder="Project ID">
+  <input type="text" id="displayName" placeholder="Display Name">
+  <input type="email" id="adminEmail" placeholder="Admin Email">
+  <button onclick="createEnterprise()">Create Enterprise</button>
+  <div class="result" id="enterpriseResult"></div>
+
+  <h3>Create Enrollment Token</h3>
+  <input type="text" id="enterpriseName" placeholder="Enterprise Name (enterprises/XXX)">
+  <input type="text" id="policyName" placeholder="Policy Name (optional)">
+  <button onclick="createToken()">Create Token</button>
+  <div class="result" id="tokenResult"></div>
+
+  <script>
+    async function createEnterprise() {
+      const projectId = document.getElementById('projectId').value;
+      const displayName = document.getElementById('displayName').value;
+      const adminEmail = document.getElementById('adminEmail').value;
+
+      const res = await fetch('/create-enterprise', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId, displayName, adminEmail })
+      });
+      const data = await res.json();
+      document.getElementById('enterpriseResult').innerText = JSON.stringify(data, null, 2);
+    }
+
+    async function createToken() {
+      const enterpriseName = document.getElementById('enterpriseName').value;
+      const policyName = document.getElementById('policyName').value;
+
+      const res = await fetch('/create-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enterpriseName, policyName })
+      });
+      const data = await res.json();
+      document.getElementById('tokenResult').innerText = JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>
