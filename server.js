@@ -1,3 +1,4 @@
+// server.js
 const express = require('express');
 const { google } = require('googleapis');
 const bodyParser = require('body-parser');
@@ -11,7 +12,9 @@ const PORT = process.env.PORT || 3000;
 const app = express();
 app.use(bodyParser.json());
 
-// Serve the HTML from root (no public folder)
+// Serve frontend HTML, CSS, JS
+app.use(express.static(__dirname));  // যদি index.html root এ থাকে
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
