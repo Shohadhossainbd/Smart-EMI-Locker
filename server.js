@@ -10,14 +10,25 @@ const PORT = process.env.PORT || 3000;
 const app = express();
 app.use(bodyParser.json());
 
-// Serve frontend
+// Serve frontend (index.html root এ আছে)
 app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// ✅ Google Auth using ENV (NO JSON FILE)
+// ==============================
+// Google Auth (ENV based, NO JSON file)
+// ==============================
+if (
+  !process.env.GOOGLE_PROJECT_ID ||
+  !process.env.GOOGLE_CLIENT_EMAIL ||
+  !process.env.GOOGLE_PRIVATE_KEY
+) {
+  console.error('❌ Missing Google Service Account ENV variables');
+  process.exit(1);
+}
+
 const auth = new google.auth.GoogleAuth({
   credentials: {
     client_email: process.env.GOOGLE_CLIENT_EMAIL,
@@ -29,13 +40,23 @@ const auth = new google.auth.GoogleAuth({
 
 async function androidManagementClient() {
   const client = await auth.getClient();
-  return google.androidmanagement({ version: 'v1', auth: client });
+  return google.androidmanagement({
+    version: 'v1',
+    auth: client,
+  });
 }
 
-// 1) Create enterprise
+// ==============================
+// 1) Create Enterprise
+// ==============================
 app.post('/create-enterprise', async (req, res) => {
   try {
     const { displayName, adminEmail } = req.body;
+
+    if (!adminEmail) {
+      return res.status(400).json({ error: 'adminEmail is required' });
+    }
+
     const androidmanagement = await androidManagementClient();
 
     const response = await androidmanagement.enterprises.create({
@@ -48,30 +69,49 @@ app.post('/create-enterprise', async (req, res) => {
 
     res.json(response.data);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
+    console.error('Create enterprise error:', err?.response?.data || err.message);
+    res.status(500).json({
+      error: err?.response?.data || err.message,
+    });
   }
 });
 
-// 2) Create enrollment token
+// ==============================
+// 2) Create Enrollment Token
+// ==============================
 app.post('/create-token', async (req, res) => {
   try {
     const { enterpriseName, policyName } = req.body;
+
+    if (!enterpriseName) {
+      return res.status(400).json({ error: 'enterpriseName is required' });
+    }
+
     const androidmanagement = await androidManagementClient();
 
-    const resp = await androidmanagement.enterprises.enrollmentTokens.create({
-      parent: enterpriseName,
-      requestBody: { policyName },
-    });
+    const response =
+      await androidmanagement.enterprises.enrollmentTokens.create({
+        parent: enterpriseName,
+        requestBody: {
+          policyName: policyName || 'defaultPolicy',
+        },
+      });
 
-    res.json({ token: resp.data.value });
+    res.json({
+      token: response.data.value,
+      expireTime: response.data.expireTime,
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
+    console.error('Create token error:', err?.response?.data || err.message);
+    res.status(500).json({
+      error: err?.response?.data || err.message,
+    });
   }
 });
 
-// Start server
+// ==============================
+// Start Server
+// ==============================
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`✅ Server running on port ${PORT}`);
 });
