@@ -3,25 +3,27 @@ const express = require('express');
 const { google } = require('googleapis');
 const bodyParser = require('body-parser');
 const path = require('path');
-const fs = require('fs');
 
-const KEY_FILE = './service-account.json';
 const SCOPES = ['https://www.googleapis.com/auth/androidmanagement'];
 const PORT = process.env.PORT || 3000;
 
 const app = express();
 app.use(bodyParser.json());
 
-// Serve frontend HTML, CSS, JS
-app.use(express.static(__dirname));  // যদি index.html root এ থাকে
+// Serve frontend
+app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Google Auth
+// ✅ Google Auth using ENV (NO JSON FILE)
 const auth = new google.auth.GoogleAuth({
-  keyFile: KEY_FILE,
+  credentials: {
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  },
+  projectId: process.env.GOOGLE_PROJECT_ID,
   scopes: SCOPES,
 });
 
@@ -33,11 +35,11 @@ async function androidManagementClient() {
 // 1) Create enterprise
 app.post('/create-enterprise', async (req, res) => {
   try {
-    const { projectId, displayName, adminEmail } = req.body;
+    const { displayName, adminEmail } = req.body;
     const androidmanagement = await androidManagementClient();
 
     const response = await androidmanagement.enterprises.create({
-      projectId,
+      projectId: process.env.GOOGLE_PROJECT_ID,
       requestBody: {
         enterpriseDisplayName: displayName || 'My Enterprise',
         adminEmail,
